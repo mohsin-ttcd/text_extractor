@@ -1,0 +1,16 @@
+{
+  "name": "bengali-ocr",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev-frontend": "cd frontend && npm run dev",
+    "build-frontend": "cd frontend && npm run build",
+    "dev-tauri": "npx tauri dev",
+    "build-tauri": "npm run build-frontend && npx tauri build",
+    "build-backend": "pyinstaller backend.spec --clean --noconfirm",
+    "build-all": "npm run build-backend && npm run build-tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.5.0"
+  }
+}

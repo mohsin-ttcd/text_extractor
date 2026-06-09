@@ -1,0 +1,6 @@
+{
+    "tesseract_path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+    "dpi": 200,
+    "connected_docx_path": "C:\\Users\\mohsi\\Downloads\\OCR Docs.docx",
+    "forget_on_close": true
+}

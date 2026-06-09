@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+PyMuPDF
+Pillow
+python-docx
+opencv-python
+numpy
+pytesseract
+pywin32
