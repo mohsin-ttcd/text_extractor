@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.ruff_cache/
+node_modules/
+*.db
+*.sqlite3
+.env
+venv/
+.venv/
+dist/
+build/
+target/

@@ -1,0 +1,155 @@
+/* ── Design Tokens ──────────────────────────────────────── */
+:root {
+  --bg-void: #F5F0E8;
+  --bg-surface: #EDE6D8;
+  --bg-raised: #FFFFFF;
+  --bg-subtle: #E8E0D0;
+  --bg-paper: #FFFAF0;
+  --border-dim: #D4CAB8;
+  --border-warm: #B8A88A;
+  --border-gold: #C9962A;
+  --gold: #C9962A;
+  --gold-bright: #E8B240;
+  --ink-red: #C0392B;
+  --ink-green: #2D6A4F;
+  --ink-teal: #1A6B6B;
+  --ink-teal-bright: #2A9090;
+  --text-primary: #1A1208;
+  --text-secondary: #6B5D4A;
+  --text-muted: #9A8B72;
+  --text-on-gold: #1A1208;
+  --paper-glow: radial-gradient(ellipse at 50% 30%, #FFF8EC 0%, #FFFAF0 60%, #F5EDD8 100%);
+  --lamp-shadow: 0 8px 32px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+  --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+.dark {
+  --bg-void: #0C0B0A;
+  --bg-surface: #13110F;
+  --bg-raised: #1C1915;
+  --bg-subtle: #211E1A;
+  --bg-paper: #F5EDD8;
+  --border-dim: #2D2924;
+  --border-warm: #4A3F30;
+  --border-gold: #8B6914;
+  --gold: #C9962A;
+  --gold-bright: #E8B240;
+  --ink-red: #C0392B;
+  --ink-green: #2D6A4F;
+  --ink-teal: #1A6B6B;
+  --ink-teal-bright: #2A9090;
+  --text-primary: #EDE0C8;
+  --text-secondary: #9A8B72;
+  --text-muted: #5C5146;
+  --text-on-gold: #1A1208;
+  --paper-glow: radial-gradient(ellipse at 50% 30%, #FFF8EC 0%, #F5EDD8 60%, #EDE0C0 100%);
+  --lamp-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,240,200,0.06);
+  --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ───────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Animations ─────────────────────────────────────────── */
+@keyframes panelEnter {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pagePlace {
+  from { opacity: 0; transform: scale(0.97) translateY(8px); filter: blur(2px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   filter: blur(0); }
+}
+
+@keyframes textReveal {
+  from { opacity: 0; filter: blur(4px); }
+  to   { opacity: 1; filter: blur(0px); }
+}
+
+@keyframes pulseBorder {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(192,57,43,0); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Utility Classes ────────────────────────────────────── */
+.animate-panel-enter {
+  animation: panelEnter 500ms ease-out both;
+}
+
+.animate-panel-enter-delayed {
+  animation: panelEnter 500ms ease-out 100ms both;
+}
+
+.animate-page-place {
+  animation: pagePlace 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-text-reveal {
+  animation: textReveal 600ms ease-out;
+}
+
+.animate-pulse-border {
+  animation: pulseBorder 1.5s infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 2s linear infinite;
+}
+
+.btn-action {
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.btn-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn-action:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-action:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Custom Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border-dim rounded-full hover:bg-border-warm;
+}
+
+/* ── Reduce Motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

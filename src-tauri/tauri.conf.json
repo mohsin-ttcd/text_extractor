@@ -1,0 +1,81 @@
+{
+  "build": {
+    "beforeBuildCommand": "npm run build-frontend",
+    "beforeDevCommand": "npm run dev-frontend",
+    "devPath": "http://localhost:5173",
+    "distDir": "../frontend/dist",
+    "withGlobalTauri": true
+  },
+  "package": {
+    "productName": "Bengali OCR",
+    "version": "1.0.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "fs": {
+        "all": true,
+        "scope": ["**"]
+      },
+      "path": {
+        "all": true
+      },
+      "os": {
+        "all": true
+      },
+      "shell": {
+        "all": false,
+        "execute": true,
+        "open": true
+      },
+      "dialog": {
+        "all": true
+      }
+    },
+    "bundle": {
+      "active": true,
+      "targets": "nsis",
+      "identifier": "com.bengali-ocr.app",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.ico"
+      ],
+      "category": "Productivity",
+      "shortDescription": "Bengali OCR Desktop Application",
+      "longDescription": "Extract and edit Bengali text from scanned PDF documents using Tesseract OCR.",
+      "copyright": "",
+      "publisher": "Bengali OCR",
+      "windows": {
+        "wix": null,
+        "nsis": {
+          "installMode": "currentUser"
+        }
+      }
+    },
+    "security": {
+      "csp": null
+    },
+    "updater": {
+      "active": true,
+      "dialog": true,
+      "endpoints": [
+        "https://releases.bengali-ocr.com/updates/{{target}}-{{arch}}/{{current_version}}"
+      ],
+      "pubkey": ""
+    },
+    "windows": [
+      {
+        "title": "Bengali OCR",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 600,
+        "minHeight": 400,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ]
+  }
+}
