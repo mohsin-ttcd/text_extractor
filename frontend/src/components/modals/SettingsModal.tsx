@@ -26,10 +26,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    if (isOpen) loadSettings();
+    if (isOpen) {
+      loadSettings();
+      setIsDark(document.documentElement.classList.contains('dark'));
+    }
   }, [isOpen]);
+
+  const handleThemeChange = (dark: boolean) => {
+    setIsDark(dark);
+    document.documentElement.classList.toggle('dark', dark);
+  };
 
   const loadSettings = async () => {
     setLoading(true);
@@ -186,6 +195,37 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                   }`}
                 >
                   Forget on Close (পিডিএফ বন্ধ হলে মুছে ফেলুন)
+                </button>
+              </div>
+            </div>
+
+            {/* Theme Toggle */}
+            <div className="border-t border-border-dim pt-4">
+              <label className="block font-dm-mono text-[11px] uppercase tracking-wider text-text-muted mb-2">
+                থিম (Theme)
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange(false)}
+                  className={`btn-action flex-1 py-2 rounded-lg font-dm-mono text-[11px] font-medium transition-colors ${
+                    !isDark
+                      ? 'bg-gold text-text-on-gold'
+                      : 'bg-subtle text-text-secondary hover:bg-border-warm'
+                  }`}
+                >
+                  Light Mode (লাইট মোড)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleThemeChange(true)}
+                  className={`btn-action flex-1 py-2 rounded-lg font-dm-mono text-[11px] font-medium transition-colors ${
+                    isDark
+                      ? 'bg-gold text-text-on-gold'
+                      : 'bg-subtle text-text-secondary hover:bg-border-warm'
+                  }`}
+                >
+                  Dark Mode (ডার্ক মোড)
                 </button>
               </div>
             </div>

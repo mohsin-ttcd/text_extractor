@@ -20,6 +20,7 @@ from ..models import (
     OCRRequest,
     BatchOCRRequest,
     SelectionOCRRequest,
+    SaveHighlightsRequest,
 )
 from ..database import DatabaseManager
 from ..ocr_processor import BengaliOcrProcessor
@@ -254,6 +255,49 @@ async def batch_ocr(
                     }
                     processing_tasks[task_id].setdefault("events", []).append(event)
 
+                    if status == "completed":
+                        try:
+                            settings = get_settings()
+                            if settings.connected_docx_path:
+                                page_data = db.get_page(request.book_id, page)
+                                if page_data:
+                                    text = page_data.get("edited_text") or page_data.get("raw_text") or ""
+                                    if text.strip():
+                                        from .export import append_via_com
+                                        from docx import Document
+                                        from docx.opc.exceptions import PackageNotFoundError
+                                        docx_path = settings.connected_docx_path
+                                        com_success = False
+                                        try:
+                                            com_success = append_via_com(docx_path, text, page)
+                                        except Exception as com_err:
+                                            print(f"[COM Batch] Error appending page {page}: {com_err}")
+                                        
+                                        if not com_success:
+                                            try:
+                                                if not os.path.exists(docx_path) or os.path.getsize(docx_path) == 0:
+                                                    doc = Document()
+                                                    doc.add_heading("বাংলা পাঠ্য নিষ্কাশন", level=1)
+                                                    doc.add_paragraph("")
+                                                else:
+                                                    try:
+                                                        doc = Document(docx_path)
+                                                    except PackageNotFoundError:
+                                                        doc = Document()
+                                                        doc.add_heading("বাংলা পাঠ্য নিষ্কাশন", level=1)
+                                                        doc.add_paragraph("")
+                                                
+                                                doc.add_paragraph(f"[পৃষ্ঠা {page}]")
+                                                for line in text.strip().split("\n"):
+                                                    if line.strip():
+                                                        doc.add_paragraph(line)
+                                                doc.add_paragraph("")
+                                                doc.save(docx_path)
+                                            except Exception as docx_err:
+                                                print(f"[docx Batch] Error writing file: {docx_err}")
+                        except Exception as e:
+                            print(f"[Batch Append] Error in background append: {e}")
+
                 processor.process_book_background(
                     pdf_path,
                     request.book_id,
@@ -397,8 +441,7 @@ async def ocr_selection(
         cropped = pil_img.crop((x1, y1, x2, y2))
 
         # Run Tesseract on the cropped region
-        processed = processor.preprocess_image(cropped)
-        text = processor.extract_text_tesseract(processed)
+        text = processor.process_cropped_image(cropped)
 
         return {"success": True, "text": text, "page_num": request.page_num}
     except Exception as e:
@@ -454,3 +497,86 @@ async def reset_page_text(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error resetting text: {str(e)}")
+
+
+@router.post("/{page_id}/save-annotations")
+async def save_page_annotations(
+    page_id: int,
+    request: SaveHighlightsRequest,
+    db: DatabaseManager = Depends(get_db),
+):
+    """
+    Save highlight annotations permanently into the PDF file in-place.
+    """
+    try:
+        # 1. Get PDF path from database
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT pdf_path FROM books WHERE id = ?", (request.book_id,)
+            )
+            row = cursor.fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Book not found")
+
+        pdf_path = row["pdf_path"]
+        if not os.path.exists(pdf_path):
+            raise HTTPException(status_code=404, detail=f"PDF file not found at {pdf_path}")
+
+        # 2. Open PDF and get the page
+        doc = fitz.open(pdf_path)
+        page = doc[request.page_num - 1]
+
+        # 3. Scale highlights to PDF points
+        # The frontend renders image at 150 DPI. PDF is in points (72 points = 1 inch).
+        # Scale factor = 72 / 150
+        scale = 72.0 / 150.0
+
+        for hl in request.highlights:
+            # Scale coordinates
+            x1 = hl.startX * scale
+            y1 = hl.startY * scale
+            x2 = hl.endX * scale
+            y2 = hl.endY * scale
+
+            # Ensure coordinates are in correct min/max order
+            rx1, rx2 = min(x1, x2), max(x1, x2)
+            ry1, ry2 = min(y1, y2), max(y1, y2)
+
+            rect = fitz.Rect(rx1, ry1, rx2, ry2)
+
+            # Add highlight annotation
+            annot = page.add_rect_annot(rect)
+            
+            # Map colors: RGB normalized to [0.0, 1.0]
+            color_map = {
+                "yellow": [1.0, 0.9, 0.0],
+                "green": [0.2, 0.8, 0.2],
+                "red": [0.9, 0.2, 0.2]
+            }
+            c = color_map.get(hl.color, [1.0, 0.9, 0.0])
+            
+            # Set stroke/fill to be semi-transparent color
+            annot.set_colors(stroke=c, fill=c)
+            annot.set_opacity(0.35)
+            annot.update()
+
+        # 4. Save PDF in-place using incremental save, falling back to temp file if locked
+        try:
+            doc.save(pdf_path, incremental=True, encryption=fitz.PDF_ENCRYPT_KEEP)
+            doc.close()
+        except Exception:
+            import shutil
+            temp_path = pdf_path + ".tmp"
+            doc.save(temp_path, deflate=True)
+            doc.close()
+            shutil.move(temp_path, pdf_path)
+
+        return {
+            "success": True,
+            "page_num": request.page_num,
+            "message": "✅ হাইলাইটগুলি পিডিএফ ফাইলে সফলভাবে সংরক্ষণ করা হয়েছে",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving PDF annotations: {str(e)}")

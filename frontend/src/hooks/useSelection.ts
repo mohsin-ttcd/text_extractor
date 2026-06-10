@@ -14,12 +14,17 @@ export const useSelection = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const isHighlighterActive = useAppStore((s) => s.isHighlighterActive);
   const addHighlight = useAppStore((s) => s.addHighlight);
+  const activeHighlightColor = useAppStore((s) => s.activeHighlightColor);
+  const zoom = useAppStore((s) => s.zoom);
 
   const getRelativePos = useCallback((clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return null;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  }, []);
+    return {
+      x: (clientX - rect.left) / zoom,
+      y: (clientY - rect.top) / zoom,
+    };
+  }, [zoom]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     const pos = getRelativePos(e.clientX, e.clientY);
@@ -37,13 +42,20 @@ export const useSelection = () => {
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing && selection && isHighlighterActive) {
-      const rect = { startX: selection.startX, startY: selection.startY, endX: selection.endX, endY: selection.endY };
+      const rect = {
+        startX: selection.startX,
+        startY: selection.startY,
+        endX: selection.endX,
+        endY: selection.endY,
+        color: activeHighlightColor
+      };
       if (Math.abs(rect.endX - rect.startX) > 3 && Math.abs(rect.endY - rect.startY) > 3) {
         addHighlight(rect);
       }
+      setSelection(null); // Clear selection box for highlighter mode
     }
     setIsDrawing(false);
-  }, [isDrawing, selection, isHighlighterActive, addHighlight]);
+  }, [isDrawing, selection, isHighlighterActive, activeHighlightColor, addHighlight]);
 
   const clearSelection = useCallback(() => {
     setSelection(null);

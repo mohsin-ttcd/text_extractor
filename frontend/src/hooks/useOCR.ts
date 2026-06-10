@@ -139,16 +139,24 @@ export const useOCR = () => {
       if (event.status === 'task_completed') {
         setIsProcessing(false);
         setActiveTaskId(null);
+        if (currentBook) {
+          pagesAPI.getPage(currentBook.id, currentPage).then((pageRes) => {
+            setCurrentPageData(pageRes.data);
+          }).catch(console.error);
+        }
+        alert('✅ ব্যাচ প্রক্রিয়াকরণ সফলভাবে সম্পন্ন হয়েছে');
       } else if (event.status === 'failed') {
         setIsProcessing(false);
         setActiveTaskId(null);
         setError('Batch OCR failed');
+        alert('❌ ব্যাচ প্রক্রিয়াকরণ ব্যর্থ হয়েছে');
       }
     }, [currentBook, currentPage, updateProgress, setIsProcessing, setCurrentPageData]),
     useCallback((err: any) => {
       setError(err);
       setIsProcessing(false);
       setActiveTaskId(null);
+      alert(`❌ ব্যাচ প্রক্রিয়াকরণে সমস্যা দেখা দিয়েছে: ${err}`);
     }, [])
   );
 

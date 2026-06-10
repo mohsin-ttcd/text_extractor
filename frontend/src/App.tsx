@@ -10,10 +10,12 @@ import TextEditor from './components/right/TextEditor';
 import StatusBar from './components/right/StatusBar';
 import SettingsModal from './components/modals/SettingsModal';
 import BooksList from './components/BooksList';
+import { usePages } from './hooks/useOCR';
 import './styles/globals.css';
 
 function App() {
-  const { setCurrentBook, currentBook, setEditedText, setConnectedDocx } = useAppStore();
+  const { setCurrentBook, currentBook, setEditedText, setConnectedDocx, processingProgress, currentPage } = useAppStore();
+  const { loadPage } = usePages();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [booksListOpen, setBooksListOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -166,20 +168,30 @@ function App() {
                   {currentBook.title}
                 </span>
                 <span className="text-xs font-dm-mono text-text-secondary">
-                  {currentBook.processed_pages} / {currentBook.total_pages} পৃষ্ঠা প্রক্রিয়া করা হয়েছে
+                  {processingProgress.current} / {processingProgress.total} পৃষ্ঠা প্রক্রিয়া করা হয়েছে
                 </span>
               </div>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                document.documentElement.classList.toggle('dark');
-              }}
-              className="btn-action px-3 py-2 bg-subtle hover:bg-border-warm text-text-secondary rounded-lg font-dm-mono text-xs"
-            >
-              🌓
-            </button>
+            {currentBook && (
+              <>
+                <button
+                  onClick={() => loadPage(currentPage)}
+                  className="btn-action px-3 py-2 bg-subtle hover:bg-border-warm text-text-secondary rounded-lg font-dm-mono text-xs"
+                  title="রিফ্রেশ করুন"
+                >
+                  🔄
+                </button>
+                <button
+                  onClick={() => setCurrentBook(null)}
+                  className="btn-action px-3 py-2 bg-subtle hover:bg-ink-red/10 hover:text-ink-red text-text-secondary rounded-lg font-dm-mono text-xs"
+                  title="বই বন্ধ করুন"
+                >
+                  ❌
+                </button>
+              </>
+            )}
             <button
               onClick={() => setBooksListOpen(true)}
               className="btn-action px-3 py-2 bg-subtle hover:bg-border-warm text-text-secondary rounded-lg font-dm-mono text-xs"

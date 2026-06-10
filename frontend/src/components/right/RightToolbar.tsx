@@ -7,7 +7,7 @@ interface RightToolbarProps {
 }
 
 const RightToolbar: React.FC<RightToolbarProps> = ({ onDocxConnect }) => {
-  const { currentBook, connectedDocxName, editedText, setConnectedDocx } = useAppStore();
+  const { currentBook, connectedDocxName, setConnectedDocx } = useAppStore();
   const docxInputRef = useRef<HTMLInputElement>(null);
 
   const handleConnectClick = async () => {
@@ -46,18 +46,23 @@ const RightToolbar: React.FC<RightToolbarProps> = ({ onDocxConnect }) => {
     e.target.value = '';
   };
 
-  const handleAppend = async () => {
-    if (!currentBook || !editedText.trim()) return;
+  const handleDownload = async () => {
+    if (!currentBook) return;
     try {
-      const response = await exportAPI.appendToConnectedDocx(currentBook.id, editedText, currentBook.processed_pages + 1);
-      alert(response.data.message);
+      const response = await exportAPI.exportToWord(currentBook.id);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${currentBook.title}_বাংলা_টেক্সট.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     } catch (err: any) {
-      alert(`❌ ত্রুটি: ${err.message || 'সংযুক্ত করতে ব্যর্থ'}`);
+      alert(`❌ ডাউনলোড ব্যর্থ হয়েছে: ${err.message || 'ডাউনলোড করতে ব্যর্থ'}`);
     }
   };
 
   const isConnected = connectedDocxName.length > 0;
-  const hasText = editedText.trim().length > 0;
 
   return (
     <div className="flex items-center gap-2">
@@ -77,18 +82,15 @@ const RightToolbar: React.FC<RightToolbarProps> = ({ onDocxConnect }) => {
         }`}
         title="Word ডকুমেন্ট সংযুক্ত করুন"
       >
-        {isConnected ? `✓ ${connectedDocxName}` : '📂 Connect Word'}
+        {isConnected ? `✓ ${connectedDocxName}` : '📂 ওয়ার্ড ফাইল যুক্ত করুন'}
       </button>
       <button
-        onClick={handleAppend}
-        disabled={!isConnected || !hasText}
+        onClick={handleDownload}
+        disabled={!currentBook}
         className="btn-action flex-1 py-2 rounded-lg font-dm-mono text-xs font-bold border relative disabled:opacity-40 bg-gold/10 border-gold/40 text-gold hover:bg-gold/20"
-        title="সংযুক্ত ডকুমেন্টে পাঠ্য যোগ করুন"
+        title="সম্পূর্ণ বইটি ডাউনলোড করুন"
       >
-        📝 Append
-        <span className="ml-1.5 inline-flex items-center px-1 py-0.5 text-[9px] rounded bg-gold/10 text-gold/60 leading-none">
-          ⌃⇧A
-        </span>
+        📥 ডাউনলোড করুন
       </button>
     </div>
   );

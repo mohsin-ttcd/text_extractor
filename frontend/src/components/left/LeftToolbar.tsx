@@ -7,7 +7,7 @@ interface LeftToolbarProps {
 }
 
 const LeftToolbar: React.FC<LeftToolbarProps> = ({ onSettingsClick, onUploadClick }) => {
-  const { isSelectionActive, setSelectionActive } = useAppStore();
+  const { isSelectionActive, setSelectionActive, setHighlighterActive } = useAppStore();
 
   return (
     <div className="flex items-center justify-between">
@@ -34,7 +34,13 @@ const LeftToolbar: React.FC<LeftToolbarProps> = ({ onSettingsClick, onUploadClic
       {/* Right: Selection pencil */}
       <div>
         <button
-          onClick={() => setSelectionActive(!isSelectionActive)}
+          onClick={() => {
+            const nextState = !isSelectionActive;
+            setSelectionActive(nextState);
+            if (nextState) {
+              setHighlighterActive(false);
+            }
+          }}
           className={`btn-action px-3 py-2 rounded-lg font-dm-mono text-xs border ${
             isSelectionActive
               ? 'bg-gold/20 border-gold text-gold'

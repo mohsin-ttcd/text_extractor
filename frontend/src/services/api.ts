@@ -127,6 +127,31 @@ export const pagesAPI = {
       book_id: bookId,
       page_num: pageNum,
     }),
+
+  ocrSelection: (
+    bookId: number,
+    pageNum: number,
+    coords: { x1: number; y1: number; x2: number; y2: number }
+  ) =>
+    api.post(`/pages/${pageNum}/ocr-selection`, {
+      book_id: bookId,
+      page_num: pageNum,
+      x1: coords.x1,
+      y1: coords.y1,
+      x2: coords.x2,
+      y2: coords.y2,
+    }),
+
+  saveAnnotations: (
+    bookId: number,
+    pageNum: number,
+    highlights: Array<{ startX: number; startY: number; endX: number; endY: number; color?: string }>
+  ) =>
+    api.post(`/pages/${pageNum}/save-annotations`, {
+      book_id: bookId,
+      page_num: pageNum,
+      highlights,
+    }),
 };
 
 export const configAPI = {
@@ -165,6 +190,11 @@ export const exportAPI = {
       book_id: bookId,
       text,
       page_num: pageNum,
+    }),
+
+  appendAllToConnectedDocx: (bookId: number) =>
+    api.post('/export/append-all', {
+      book_id: bookId,
     }),
 
   closeDocx: () => api.post('/export/close'),

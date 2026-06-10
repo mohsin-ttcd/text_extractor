@@ -1,0 +1,33 @@
+
+--- [append_via_com Error at Thu Jun 11 00:14:14 2026] ---
+docx_path: F:\Programing Project\CLI\OCR Docs.docx
+Exception: Open.Content
+Traceback (most recent call last):
+  File "F:\Programing Project\CLI\PDF text ectractor\src-backend\app\routes\export.py", line 93, in append_via_com
+    end_pos = target_doc.Content.End - 1
+              ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mohsi\AppData\Roaming\Python\Python314\site-packages\win32com\client\dynamic.py", line 631, in __getattr__
+    raise AttributeError(f"{self._username_}.{attr}")
+AttributeError: Open.Content
+
+--- [append_via_com Error at Thu Jun 11 00:14:28 2026] ---
+docx_path: F:\Programing Project\CLI\OCR Docs.docx
+Exception: Open.Content
+Traceback (most recent call last):
+  File "F:\Programing Project\CLI\PDF text ectractor\src-backend\app\routes\export.py", line 93, in append_via_com
+    end_pos = target_doc.Content.End - 1
+              ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mohsi\AppData\Roaming\Python\Python314\site-packages\win32com\client\dynamic.py", line 631, in __getattr__
+    raise AttributeError(f"{self._username_}.{attr}")
+AttributeError: Open.Content
+
+--- [append_via_com Error at Thu Jun 11 00:14:46 2026] ---
+docx_path: F:\Programing Project\CLI\OCR Docs.docx
+Exception: Open.Content
+Traceback (most recent call last):
+  File "F:\Programing Project\CLI\PDF text ectractor\src-backend\app\routes\export.py", line 93, in append_via_com
+    end_pos = target_doc.Content.End - 1
+              ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mohsi\AppData\Roaming\Python\Python314\site-packages\win32com\client\dynamic.py", line 631, in __getattr__
+    raise AttributeError(f"{self._username_}.{attr}")
+AttributeError: Open.Content

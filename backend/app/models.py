@@ -104,6 +104,12 @@ class AppendRequest(BaseModel):
     page_num: Optional[int] = None
 
 
+class AppendAllRequest(BaseModel):
+    """Request to append all processed pages to a connected Word document"""
+
+    book_id: int
+
+
 class ExportRequest(BaseModel):
     """Word export request"""
 
@@ -117,3 +123,17 @@ class ErrorResponse(BaseModel):
     detail: str
     error_code: str
     status_code: int
+
+
+class HighlightRectModel(BaseModel):
+    startX: float
+    startY: float
+    endX: float
+    endY: float
+    color: str = "yellow"
+
+
+class SaveHighlightsRequest(BaseModel):
+    book_id: int
+    page_num: int
+    highlights: List[HighlightRectModel]

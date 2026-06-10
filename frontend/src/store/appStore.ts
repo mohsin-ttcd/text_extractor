@@ -24,6 +24,7 @@ export interface HighlightRect {
   startY: number;
   endX: number;
   endY: number;
+  color?: 'yellow' | 'green' | 'red';
 }
 
 export interface AppState {
@@ -69,7 +70,10 @@ export interface AppState {
   // Highlights
   isHighlighterActive: boolean;
   highlights: HighlightRect[];
+  unsavedHighlights: { [pageNum: number]: HighlightRect[] };
+  activeHighlightColor: 'yellow' | 'green' | 'red';
   setHighlighterActive: (active: boolean) => void;
+  setActiveHighlightColor: (color: 'yellow' | 'green' | 'red') => void;
   addHighlight: (rect: Omit<HighlightRect, 'id'>) => void;
   clearHighlights: () => void;
 
@@ -82,12 +86,27 @@ export const useAppStore = create<AppState>((set) => ({
   books: [],
   currentBook: null,
   setBooks: (books) => set({ books }),
-  setCurrentBook: (book) => set({ currentBook: book, currentPage: 1, currentPageData: null, editedText: '' }),
+  setCurrentBook: (book) =>
+    set({
+      currentBook: book,
+      currentPage: 1,
+      currentPageData: null,
+      editedText: '',
+      processingProgress: book
+        ? { current: book.processed_pages, total: book.total_pages }
+        : { current: 0, total: 0 },
+      highlights: [],
+      unsavedHighlights: {},
+    }),
 
   // Initial page state
   currentPage: 1,
   currentPageData: null,
-  setCurrentPage: (page) => set({ currentPage: page }),
+  setCurrentPage: (page) =>
+    set((state) => ({
+      currentPage: page,
+      highlights: state.unsavedHighlights[page] || [],
+    })),
   setCurrentPageData: (data) => set({ currentPageData: data }),
 
   // Initial editing state
@@ -103,7 +122,15 @@ export const useAppStore = create<AppState>((set) => ({
   processingProgress: { current: 0, total: 0 },
   setIsProcessing: (processing) => set({ isProcessing: processing }),
   updateProgress: (current, total) =>
-    set({ processingProgress: { current, total } }),
+    set((state) => {
+      const updatedBook = state.currentBook
+        ? { ...state.currentBook, processed_pages: current }
+        : null;
+      return {
+        processingProgress: { current, total },
+        currentBook: updatedBook,
+      };
+    }),
 
   // Initial UI state
   isSettingsOpen: false,
@@ -121,12 +148,30 @@ export const useAppStore = create<AppState>((set) => ({
   // Initial highlight state
   isHighlighterActive: false,
   highlights: [],
+  unsavedHighlights: {},
+  activeHighlightColor: 'yellow',
   setHighlighterActive: (active) => set({ isHighlighterActive: active }),
+  setActiveHighlightColor: (color) => set({ activeHighlightColor: color }),
   addHighlight: (rect) =>
+    set((state) => {
+      const newRect = { ...rect, id: Date.now() };
+      const currentHighlights = [...state.highlights, newRect];
+      return {
+        highlights: currentHighlights,
+        unsavedHighlights: {
+          ...state.unsavedHighlights,
+          [state.currentPage]: currentHighlights,
+        },
+      };
+    }),
+  clearHighlights: () =>
     set((state) => ({
-      highlights: [...state.highlights, { ...rect, id: Date.now() }],
+      highlights: [],
+      unsavedHighlights: {
+        ...state.unsavedHighlights,
+        [state.currentPage]: [],
+      },
     })),
-  clearHighlights: () => set({ highlights: [] }),
 
   // Reset to initial state
   reset: () =>
@@ -145,5 +190,7 @@ export const useAppStore = create<AppState>((set) => ({
       isSelectionActive: false,
       isHighlighterActive: false,
       highlights: [],
+      unsavedHighlights: {},
+      activeHighlightColor: 'yellow',
     }),
 }));

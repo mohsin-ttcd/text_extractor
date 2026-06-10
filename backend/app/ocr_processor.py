@@ -53,10 +53,142 @@ class BengaliOcrProcessor:
         doc.close()
         return count
 
+    def is_garbage_bengali(self, text: str) -> bool:
+        """
+        Detects if the extracted text layer contains corrupted Bengali or bad OCR garbage.
+        """
+        if not text:
+            return True
+        
+        # 1. Check for known garbage characters commonly produced by bad OCR
+        garbage_chars = set("ˠɃȸˡɯʍǸʦƼƶǥˑ")
+        garbage_count = sum(1 for c in text if c in garbage_chars)
+        if garbage_count > 0:
+            return True
+            
+        # 2. Check for lonely Bengali vowel/diacritic signs
+        bengali_kars = set("ািীুূৃেৈোৌৎংঃঁ")
+        words = text.split()
+        lonely_kars = sum(1 for w in words if len(w) == 1 and w in bengali_kars)
+        if lonely_kars > 3:
+            return True
+            
+        # 3. Check allowed character ratio
+        allowed_count = 0
+        total_count = 0
+        for char in text:
+            if char.isspace():
+                continue
+            total_count += 1
+            cp = ord(char)
+            # Allowed: Bengali, ASCII (English), Bengali dandas
+            if (0x0980 <= cp <= 0x09FF) or (0x0000 <= cp <= 0x007F) or (0x0964 <= cp <= 0x0965):
+                allowed_count += 1
+                
+        if total_count > 0:
+            ratio = allowed_count / total_count
+            if ratio < 0.95:
+                return True
+                
+        return False
+
+    def fix_legacy_bengali_text(self, text: str) -> str:
+        if not text:
+            return text
+
+        # Specific word replacements for complex/irregular mappings
+        word_replacements = {
+            "ˠমী": "রূমী",
+            "দˠেন": "দরূনে",
+            "কাˠনরা": "কাফেরানরা",
+            "কাˠেণর": "কারণের",
+            "বʦইয়াম": "বুঝাইলাম",
+            "কু-িরপুʦিলেক": "কু-রিপুগুলিকে",
+            "মহˑেত": "মুহূর্তে",
+            "রˑানী": "রূহানী",
+            "চতুপর্াে˥": "চতুর্পাশে",
+            "চািরপাে˥র্": "চারিপার্শ্বে",
+            "উে˃র্": "ঊর্ধ্বে",
+            "পˤরাও": "পড়াও",
+        }
+
+        for src, dest in word_replacements.items():
+            text = text.replace(src, dest)
+
+        # Character replacements
+        char_replacements = {
+            "Ƽ": "প্র",
+            "ɯ": "ল্ল",
+            "ȴ": "ন্ত",
+            "ʍ": "স্থ",
+            "ȼ": "ন্ন",
+            "Ǹ": "চ্ছ",
+            "˸": "হু",
+            "ʦ": "গু",
+            "ɘ": "ম্প",
+            "Ƀ": "প্ত",
+            "ǥ": "গ্ন",
+            "ʌ": "স্ত",
+            "̽": "সু",
+            "ȯ": "ণ্ড",
+            "ƹ": "দর",
+            "ʅ": "স্ক",
+            "˹": "হৃ",
+            "ʔ": "স্ম",
+            "Ȥ": "দ্ধ",
+            "ƶ": "ত্র",
+            "ˬ": "ন্ধু",
+            "Ȳ": "ন্ত্র",
+            "ɰ": "শ্চ",
+            "Ǭ": "ঙ্ক্ষ",
+            "˔": "ন্তু",
+            "˗": "ন্ব",
+            "˷": "স্ব",
+            "ʿ": "দ্ব",
+            "ɺ": "ষ্ট",
+            "ƾ": "ব্র",
+            "ʑ": "স্প",
+            "Ȼ": "ন্ধ",
+            "Ǥ": "গ্ধ",
+        }
+
+        # Handle 'ˡ' depending on context
+        text = text.replace("ˡপ", "रूप")
+        text = text.replace("ˡে", "দে")
+        text = text.replace("ˡ", "দে")
+
+        # Handle '̾' u-kar vs 'দু'
+        text = text.replace("̾লর্ভ", "দুর্লভ")
+        text = text.replace("̾ঃখ", "দুঃখ")
+        text = text.replace("̾ঃ", "দুঃ")
+        text = text.replace("̾", "ু")
+
+        # Handle 'আȸ' -> 'ান্দ'
+        text = text.replace("আȸ", "ান্দ")
+        char_replacements["ȸ"] = "ন্দ"
+
+        for src, dest in char_replacements.items():
+            text = text.replace(src, dest)
+
+        return text
+
     def extract_text_layer(self, page):
         """Extract selectable text from a PDF page before falling back to OCR."""
         text = page.get_text("text").strip()
-        return text if len(text) >= 10 else ""
+        if len(text) < 10:
+            return ""
+            
+        if self.is_garbage_bengali(text):
+            # Try to repair legacy/ANSI characters first (Hybrid Approach)
+            repaired_text = self.fix_legacy_bengali_text(text)
+            if not self.is_garbage_bengali(repaired_text):
+                print("[OCR] Successfully repaired legacy text layer using hybrid translation mapping")
+                return repaired_text
+                
+            print("[OCR] Detected garbage text layer on page, falling back to Tesseract OCR")
+            return ""
+            
+        return text
 
     def preprocess_image(self, pil_image):
         """
@@ -103,7 +235,7 @@ class BengaliOcrProcessor:
         # Convert back to PIL Image
         return Image.fromarray(binarized)
 
-    def extract_text_tesseract(self, pil_image):
+    def extract_text_tesseract(self, pil_image, psm=3):
         """Extracts text using local Tesseract OCR engine with explicit language pack checks."""
         local_tessdata_dir = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "tessdata"
@@ -135,7 +267,7 @@ class BengaliOcrProcessor:
             # Otherwise use our local workspace fallback directory
             os.environ["TESSDATA_PREFIX"] = local_tessdata_dir
 
-        config_str = "--psm 3"
+        config_str = f"--psm {psm}"
         try:
             return pytesseract.image_to_string(
                 pil_image, lang="ben+eng", config=config_str
@@ -226,7 +358,7 @@ class BengaliOcrProcessor:
         """
         # Preprocess the cropped area
         processed_img = self.preprocess_image(pil_image)
-        return self.extract_text_tesseract(processed_img)
+        return self.extract_text_tesseract(processed_img, psm=6)
 
     def process_book_background(
         self, pdf_path, book_id, page_start, page_end, progress_callback, stop_event
